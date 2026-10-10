@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Datasets and outputs are large / licensed - never commit them
+data/raw/*
+data/processed/*
+!data/**/.gitkeep
+checkpoints/
+runs/
+*.onnx
