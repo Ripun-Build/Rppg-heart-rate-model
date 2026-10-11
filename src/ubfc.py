@@ -25,6 +25,12 @@ def load_ground_truth(subject_dir):
     return {"ppg": ppg, "hr": hr, "ts": ts, "fs": fs}
 
 
+def resample_uniform(ppg, ts, fs):
+    """Ground-truth samples have jittery timestamps; put them on an even grid (one per frame)."""
+    grid = ts[0] + np.arange(len(ts)) / fs
+    return np.interp(grid, ts, ppg)
+
+
 def video_info(subject_dir):
     cap = cv2.VideoCapture(str(Path(subject_dir) / "vid.avi"))
     n = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))

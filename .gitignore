@@ -10,3 +10,9 @@ data/processed/*
 checkpoints/
 runs/
 *.onnx
+
+# Downloaded model weights (see README for the download command)
+models/*.tflite
+
+# Images that show dataset subjects' faces - UBFC license, never publish
+outputs/**/private/

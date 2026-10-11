@@ -41,6 +41,24 @@ def snr_db(wave, fs, filtered=False, width_hz=0.1):
     return float(10 * np.log10(sig / noise))
 
 
+def pos(rgb, fs, window_s=1.6):
+    """POS (Wang et al. 2017): classical, non-learned pulse extraction from mean skin RGB.
+
+    rgb: (T, 3) mean R, G, B of the face per frame. Used only as a sanity check / baseline.
+    """
+    rgb = np.asarray(rgb, dtype=np.float64)
+    n, l = len(rgb), int(window_s * fs)
+    projection = np.array([[0, 1, -1], [-2, 1, 1]])
+    out = np.zeros(n)
+    for end in range(l, n + 1):
+        c = rgb[end - l : end]
+        c = (c / (c.mean(axis=0) + 1e-9)).T            # temporal normalization
+        s = projection @ c                              # project onto plane orthogonal to skin tone
+        h = s[0] + (s[0].std() / (s[1].std() + 1e-9)) * s[1]
+        out[end - l : end] += h - h.mean()              # overlap-add
+    return out
+
+
 def quality_label(snr, face_found_ratio=1.0, mean_luma=128.0):
     """Combine cues into Good / Fair / Poor. Thresholds get tuned in Phase 5."""
     if face_found_ratio < 0.9 or not (40 <= mean_luma <= 220) or snr < -3:

@@ -6,7 +6,30 @@
             "type": "debugpy",
             "request": "launch",
             "module": "src.check_dataset",
-            "args": ["--subject", "${input:subject}"],
+            "args": [
+                "--subject",
+                "${input:subject}"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Phase 2: preprocess videos",
+            "module": "src.preprocess",
+            "args": [
+                "--workers",
+                "6"
+            ],
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Phase 2: check preprocessing",
+            "module": "src.check_preprocess",
+            "type": "debugpy",
+            "request": "launch",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal"
         },

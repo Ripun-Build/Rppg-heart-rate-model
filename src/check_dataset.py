@@ -27,18 +27,12 @@ import pandas as pd
 from scipy.signal import find_peaks
 
 from src.pulse import MAX_HZ, MIN_HZ, _spectrum, bandpass, estimate_bpm, snr_db
-from src.ubfc import list_subjects, load_ground_truth, video_info
+from src.ubfc import list_subjects, load_ground_truth, resample_uniform, video_info
 
 OUT_DIR = Path(__file__).resolve().parent.parent / "outputs" / "phase1"
 WINDOW = 160
 VALID_HR = (40, 200)  # oximeter readings outside this are dropouts
 MAX_LABEL_MAE = 5.0   # BPM; FFT-vs-peaks disagreement above this means a noisy label
-
-
-def resample_uniform(ppg, ts, fs):
-    """Ground-truth samples have jittery timestamps; put them on an even grid for the FFT."""
-    grid = ts[0] + np.arange(len(ts)) / fs
-    return np.interp(grid, ts, ppg)
 
 
 def oximeter_hr(hr):

@@ -19,12 +19,12 @@ def conv_block(c_in, c_out, kernel, padding):
 
 
 class PhysNet(nn.Module):
-    def __init__(self, frames=160):
+    def __init__(self, frames=160, in_channels=3):
         super().__init__()
         self.frames = frames
 
         # Encoder: spatial pooling shrinks the face, temporal pooling halves time twice.
-        self.conv1 = conv_block(3, 16, (1, 5, 5), (0, 2, 2))
+        self.conv1 = conv_block(in_channels, 16, (1, 5, 5), (0, 2, 2))
         self.pool1 = nn.MaxPool3d((1, 2, 2), stride=(1, 2, 2))
 
         self.conv2 = conv_block(16, 32, 3, 1)
