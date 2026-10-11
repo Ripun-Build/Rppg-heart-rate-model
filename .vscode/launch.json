@@ -1,0 +1,30 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Phase 1: check dataset",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "src.check_dataset",
+            "args": ["--subject", "${input:subject}"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Model smoke test",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "src.model",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "subject",
+            "type": "promptString",
+            "description": "Subject number for the detailed plot (e.g. 1, 14, 24)",
+            "default": "1"
+        }
+    ]
+}
