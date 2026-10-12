@@ -1,0 +1,19 @@
+# PhysNet trained on UBFC-rPPG (subject split in configs/split_ubfc.json)
+name: physnet_ubfc
+
+data:
+  clip_len: 160
+  input_type: diff      # diff | std | both  (see src/dataset.py)
+  train_stride: 80      # overlapping training clips = 2x more examples
+  augment: true
+
+model:
+  frames: 160
+
+train:
+  epochs: 30
+  batch_size: 4
+  lr: 0.001
+  weight_decay: 0.0
+  seed: 42
+  device: mps           # mps (Apple GPU) | cpu | cuda

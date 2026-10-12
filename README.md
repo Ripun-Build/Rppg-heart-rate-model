@@ -25,7 +25,9 @@ curl -L -o models/blaze_face_short_range.tflite \
 | `src/dataset.py` | PyTorch Dataset: 160-frame clips, DiffNormalized input, augmentation, subject split |
 | `src/check_preprocess.py` | Phase 2 check: crop quality, POS sanity check, Dataset shapes |
 | `configs/split_ubfc.json` | Fixed train/val/test split by subject (30/6/6) |
-| `src/train.py`, `src/evaluate.py` | *(todo)* |
+| `src/train.py` | Training loop, overfit sanity test, best-checkpoint saving, TensorBoard |
+| `configs/physnet_ubfc.yaml` | Training settings |
+| `src/evaluate.py` | *(todo)* |
 | `src/live.py`, `src/export.py` | *(todo)* webcam demo, ONNX export |
 | `data/raw/` | Downloaded datasets (git-ignored) |
 
@@ -44,7 +46,10 @@ Reference implementation: https://github.com/ubicomplab/rPPG-Toolbox
 - [x] Phase 2 – preprocessing: face found in 100% of frames, box jitter 0.07 px/frame,
   POS on crops 2.88 BPM MAE (pulse preserved); 685 train / 69 val / 68 test clips
   (`python -m src.preprocess`, `python -m src.check_preprocess`, results in `outputs/phase2/`)
-- [ ] Phase 3 – training
+- [~] Phase 3 – training (first run): overfit test passes; best val MAE **1.79 BPM** (epoch 5).
+  Stopped at epoch 11/30: train loss kept falling while val loss rose (overfitting).
+  Next: weight decay, lower LR, stronger augmentation, early stopping.
+  (`python -m src.train --overfit 4`, `python -m src.train`, results in `outputs/phase3/`)
 - [ ] Phase 4/5 – evaluation + confidence tuning
 - [ ] Phase 6 – live webcam demo
 - [ ] Phase 7 – ONNX export

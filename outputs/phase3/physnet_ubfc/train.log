@@ -1,0 +1,46 @@
+Training physnet_ubfc on mps: 685 train clips, 69 val clips, 171 steps/epoch, 30 epochs
+  epoch 1 step 50/171 loss 0.9518
+  epoch 1 step 100/171 loss 0.7265
+  epoch 1 step 150/171 loss 0.7296
+Epoch  1/30  train 0.8017  val 0.7486  val MAE  1.95 BPM  RMSE  2.81  r 0.987  within 5 BPM  94%  (4.9 min)  * best
+  epoch 2 step 50/171 loss 0.6774
+  epoch 2 step 100/171 loss 0.7023
+  epoch 2 step 150/171 loss 0.7305
+Epoch  2/30  train 0.7072  val 0.7506  val MAE  1.96 BPM  RMSE  2.82  r 0.987  within 5 BPM  94%  (5.3 min)
+  epoch 3 step 50/171 loss 0.7226
+  epoch 3 step 100/171 loss 0.6683
+  epoch 3 step 150/171 loss 0.6860
+Epoch  3/30  train 0.6928  val 0.7366  val MAE  1.95 BPM  RMSE  2.77  r 0.987  within 5 BPM  94%  (6.1 min)
+  epoch 4 step 50/171 loss 0.6417
+  epoch 4 step 100/171 loss 0.6731
+  epoch 4 step 150/171 loss 0.6598
+Epoch  4/30  train 0.6666  val 0.7682  val MAE  2.03 BPM  RMSE  2.93  r 0.986  within 5 BPM  94%  (6.3 min)
+  epoch 5 step 50/171 loss 0.6778
+  epoch 5 step 100/171 loss 0.6509
+  epoch 5 step 150/171 loss 0.7089
+Epoch  5/30  train 0.6743  val 0.7425  val MAE  1.79 BPM  RMSE  2.78  r 0.987  within 5 BPM  93%  (7.0 min)  * best
+  epoch 6 step 50/171 loss 0.6627
+  epoch 6 step 100/171 loss 0.6796
+  epoch 6 step 150/171 loss 0.6495
+Epoch  6/30  train 0.6566  val 0.7949  val MAE  1.87 BPM  RMSE  2.95  r 0.986  within 5 BPM  93%  (6.9 min)
+  epoch 7 step 50/171 loss 0.6401
+  epoch 7 step 100/171 loss 0.6786
+  epoch 7 step 150/171 loss 0.6579
+Epoch  7/30  train 0.6664  val 0.8384  val MAE  1.96 BPM  RMSE  2.88  r 0.986  within 5 BPM  93%  (6.2 min)
+  epoch 8 step 50/171 loss 0.6306
+  epoch 8 step 100/171 loss 0.6622
+  epoch 8 step 150/171 loss 0.6643
+Epoch  8/30  train 0.6537  val 0.7507  val MAE  1.96 BPM  RMSE  2.83  r 0.987  within 5 BPM  93%  (5.8 min)
+  epoch 9 step 50/171 loss 0.6677
+  epoch 9 step 100/171 loss 0.6391
+  epoch 9 step 150/171 loss 0.6385
+Epoch  9/30  train 0.6424  val 0.7787  val MAE  1.95 BPM  RMSE  3.05  r 0.985  within 5 BPM  93%  (6.1 min)
+  epoch 10 step 50/171 loss 0.6519
+  epoch 10 step 100/171 loss 0.6246
+  epoch 10 step 150/171 loss 0.6083
+Epoch 10/30  train 0.6223  val 0.7965  val MAE  2.79 BPM  RMSE  5.18  r 0.956  within 5 BPM  88%  (5.5 min)
+  epoch 11 step 50/171 loss 0.6444
+  epoch 11 step 100/171 loss 0.6144
+  epoch 11 step 150/171 loss 0.5816
+Epoch 11/30  train 0.6129  val 0.8614  val MAE  2.45 BPM  RMSE  3.31  r 0.982  within 5 BPM  90%  (5.4 min)
+  epoch 12 step 50/171 loss 0.5690

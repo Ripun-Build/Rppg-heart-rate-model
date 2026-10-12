@@ -34,6 +34,37 @@
             "console": "integratedTerminal"
         },
         {
+            "name": "Phase 3: overfit sanity test",
+            "module": "src.train",
+            "args": [
+                "--overfit",
+                "4"
+            ],
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Phase 3: train PhysNet",
+            "module": "src.train",
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Phase 3: resume training",
+            "module": "src.train",
+            "args": [
+                "--resume"
+            ],
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "Model smoke test",
             "type": "debugpy",
             "request": "launch",
