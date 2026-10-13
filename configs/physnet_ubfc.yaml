@@ -15,5 +15,7 @@ train:
   batch_size: 4
   lr: 0.001
   weight_decay: 0.0
+  patience: 5           # early stopping: stop after 5 epochs without a new best val MAE
+                        # (first run had none; its best was epoch 5 and it overfit after)
   seed: 42
   device: mps           # mps (Apple GPU) | cpu | cuda

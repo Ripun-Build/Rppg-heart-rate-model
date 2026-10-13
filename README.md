@@ -1,5 +1,16 @@
 # RPPG – Heart rate from a face camera
 
+> **Branch `fix-overfitting`: experiment record only, not merged into `main`.**
+> Runs 2 and 3 tried to reduce run 1's overfitting:
+> - Run 2 (`configs/physnet_ubfc_reg.yaml`): dropout 0.3, AdamW weight decay 0.05, LR 5e-4,
+>   zoom + camera-noise augmentation, early stopping. Overfitting gap flat (~0.10 vs 0.25),
+>   but validation MAE worse (3.51 vs 1.85 BPM, corrected HR calculation).
+> - Run 3 (`configs/physnet_ubfc_ema.yaml`): weight decay 0.01, zoom + noise augmentation,
+>   EMA weights, early stopping. Smooth training, validation MAE 2.81 BPM.
+> - Finding: contrast / color-gain augmentation has no effect on DiffNormalized input.
+> - Conclusion: neither beat run 1 on validation; run 1 `best.pt` remains the main model.
+>   See `outputs/phase3/run_comparison.png` and the ablation rows in `outputs/phase5/metrics.csv`.
+
 PhysNet (3D-CNN) trained on UBFC-rPPG, tested on PURE, then run live on a webcam.
 Outputs BPM plus a signal-quality label (Good / Fair / Poor). Not a medical device.
 

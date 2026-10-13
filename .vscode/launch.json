@@ -65,8 +65,69 @@
             "console": "integratedTerminal"
         },
         {
+            "name": "Phase 3: train PhysNet (regularized, run 2)",
+            "module": "src.train",
+            "args": [
+                "--config",
+                "configs/physnet_ubfc_reg.yaml"
+            ],
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Phase 3: resume regularized training",
+            "module": "src.train",
+            "args": [
+                "--config",
+                "configs/physnet_ubfc_reg.yaml",
+                "--resume"
+            ],
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Phase 3: train PhysNet (balanced + EMA, run 3)",
+            "module": "src.train",
+            "args": [
+                "--config",
+                "configs/physnet_ubfc_ema.yaml"
+            ],
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Phase 3: resume run 3",
+            "module": "src.train",
+            "args": [
+                "--config",
+                "configs/physnet_ubfc_ema.yaml",
+                "--resume"
+            ],
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "Phase 5: evaluate main model",
             "module": "src.evaluate",
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Phase 5: evaluate + ablation (runs 2, 3)",
+            "module": "src.evaluate",
+            "args": [
+                "--ablation"
+            ],
             "type": "debugpy",
             "request": "launch",
             "cwd": "${workspaceFolder}",

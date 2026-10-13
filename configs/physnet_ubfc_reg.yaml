@@ -1,0 +1,28 @@
+# Run 2: same as physnet_ubfc.yaml + regularization against the overfitting seen in run 1
+# (run 1: train loss kept falling while val loss rose from epoch 5 on).
+name: physnet_ubfc_reg
+
+data:
+  clip_len: 160
+  input_type: diff
+  train_stride: 80
+  augment:
+    flip: true
+    shift: 4
+    brightness: 15
+    speed: 0.2
+    zoom: 0.15          # NEW: face 15% bigger/smaller
+    noise: 5.0          # NEW: per-pixel camera noise, std up to 5 (0-255 scale)
+
+model:
+  frames: 160
+  dropout: 0.3          # NEW: drop 30% of feature maps during training
+
+train:
+  epochs: 25
+  batch_size: 4
+  lr: 0.0005            # was 0.001
+  weight_decay: 0.05    # was 0 (AdamW)
+  patience: 6           # NEW: early stopping on validation MAE
+  seed: 42
+  device: mps

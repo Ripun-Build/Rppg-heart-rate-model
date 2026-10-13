@@ -29,6 +29,7 @@ import numpy as np
 import pandas as pd
 import torch
 import yaml
+from torch.optim.swa_utils import AveragedModel, get_ema_multi_avg_fn
 from torch.utils.data import DataLoader, Subset
 from torch.utils.tensorboard import SummaryWriter
 
@@ -114,7 +115,8 @@ def overfit_test(cfg, n_clips, device, steps=150):
     split = load_split()
     ds = RPPGDataset(split["train"], clip_len=cfg["data"]["clip_len"], input_type=cfg["data"]["input_type"])
     batch = next(iter(DataLoader(Subset(ds, range(0, len(ds), len(ds) // n_clips)[:n_clips]), batch_size=n_clips)))
-    model = PhysNet(cfg["model"]["frames"], in_channels=ds.in_channels).to(device)
+    model = PhysNet(cfg["model"]["frames"], in_channels=ds.in_channels,
+                    dropout=cfg["model"].get("dropout", 0.0)).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=cfg["train"]["lr"])
     loss_fn = NegPearsonLoss()
     x, y = batch["x"].to(device), batch["y"].to(device)
@@ -155,10 +157,18 @@ def train(cfg, device, resume=False):
     train_dl = DataLoader(train_ds, batch_size=t["batch_size"], shuffle=True, drop_last=True)
     val_dl = DataLoader(val_ds, batch_size=t["batch_size"])
 
-    model = PhysNet(cfg["model"]["frames"], in_channels=train_ds.in_channels).to(device)
-    opt = torch.optim.Adam(model.parameters(), lr=t["lr"], weight_decay=t["weight_decay"])
+    model = PhysNet(cfg["model"]["frames"], in_channels=train_ds.in_channels,
+                    dropout=cfg["model"].get("dropout", 0.0)).to(device)
+    # AdamW applies weight decay directly to the weights (with plain Adam it gets mixed into
+    # the adaptive step size and is much weaker). With weight_decay 0 the two are identical.
+    opt = torch.optim.AdamW(model.parameters(), lr=t["lr"], weight_decay=t["weight_decay"])
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=t["epochs"])
     loss_fn = NegPearsonLoss()
+    # EMA: keep a running average of the weights (BatchNorm statistics included) and validate /
+    # save that instead of the raw weights. Smooths out step-to-step noise; usually generalizes better.
+    ema = AveragedModel(model, multi_avg_fn=get_ema_multi_avg_fn(t["ema_decay"]), use_buffers=True) \
+        if t.get("ema_decay") else None
+    eval_model = ema.module if ema else model
 
     start_epoch, best_mae, history = 1, float("inf"), []
     if resume and (ckpt_dir / "last.pt").exists():
@@ -166,6 +176,8 @@ def train(cfg, device, resume=False):
         model.load_state_dict(ck["model"])
         opt.load_state_dict(ck["optimizer"])
         sched.load_state_dict(ck["scheduler"])
+        if ema:
+            ema.load_state_dict(ck["ema"])
         start_epoch, best_mae, history = ck["epoch"] + 1, ck["best_mae"], ck["history"]
         print(f"Resumed from epoch {ck['epoch']} (best val MAE {best_mae:.2f})")
 
@@ -173,6 +185,7 @@ def train(cfg, device, resume=False):
     print(f"Training {name} on {device}: {len(train_ds)} train clips, {len(val_ds)} val clips, "
           f"{len(train_dl)} steps/epoch, {t['epochs']} epochs")
 
+    patience = t.get("patience")  # stop after this many epochs without a new best val MAE
     for epoch in range(start_epoch, t["epochs"] + 1):
         model.train()
         t0, losses = time.time(), []
@@ -181,12 +194,14 @@ def train(cfg, device, resume=False):
             opt.zero_grad()
             loss.backward()
             opt.step()
+            if ema:
+                ema.update_parameters(model)
             losses.append(loss.item())
             if i % 50 == 0:
                 print(f"  epoch {epoch} step {i}/{len(train_dl)} loss {np.mean(losses[-50:]):.4f}", flush=True)
         sched.step()
 
-        out = predict(model, val_dl, device)
+        out = predict(eval_model, val_dl, device)
         val_loss = float(loss_fn(torch.from_numpy(out["pred"]), torch.from_numpy(out["label"])))
         m, pred_hr, true_hr = hr_metrics(out, is_diff)
         row = {"epoch": epoch, "train_loss": float(np.mean(losses)), "val_loss": val_loss,
@@ -200,10 +215,11 @@ def train(cfg, device, resume=False):
         improved = m["mae"] < best_mae
         if improved:
             best_mae = m["mae"]
-            torch.save({"model": model.state_dict(), "config": cfg, "epoch": epoch, "val_mae": best_mae},
+            torch.save({"model": eval_model.state_dict(), "config": cfg, "epoch": epoch, "val_mae": best_mae},
                        ckpt_dir / "best.pt")
             plot_examples(out, pred_hr, true_hr, out_dir / "val_examples.png", is_diff=is_diff)
         torch.save({"model": model.state_dict(), "optimizer": opt.state_dict(), "scheduler": sched.state_dict(),
+                    "ema": ema.state_dict() if ema else None,
                     "epoch": epoch, "best_mae": best_mae, "history": history, "config": cfg},
                    ckpt_dir / "last.pt")
 
@@ -214,6 +230,11 @@ def train(cfg, device, resume=False):
               f"val MAE {m['mae']:5.2f} BPM  RMSE {m['rmse']:5.2f}  r {m['pearson']:.3f}  "
               f"within 5 BPM {m['within5_pct']:3.0f}%  ({row['minutes']:.1f} min){'  * best' if improved else ''}",
               flush=True)
+
+        best_epoch = int(min(history, key=lambda r: r["val_mae"])["epoch"])
+        if patience and epoch - best_epoch >= patience:
+            print(f"Early stopping: no improvement for {patience} epochs (best was epoch {best_epoch})")
+            break
 
     writer.close()
     print(f"\nDone. Best validation MAE {best_mae:.2f} BPM -> {ckpt_dir / 'best.pt'}")

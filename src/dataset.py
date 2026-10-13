@@ -16,6 +16,7 @@ Input types (`input_type`):
 import json
 from pathlib import Path
 
+import cv2
 import numpy as np
 import torch
 from torch.utils.data import Dataset
@@ -63,12 +64,37 @@ def standardize(x):
     return (x - x.mean()) / (x.std() + EPS)
 
 
+# Augmentation strengths; `augment: true` in a config uses exactly these (first training run).
+DEFAULT_AUG = {
+    "flip": True,       # random horizontal flip
+    "shift": 4,         # max spatial shift in pixels
+    "brightness": 15,   # max brightness offset (0-255 scale)
+    "contrast": 0.2,    # max contrast change (no effect on "diff" input, kept for "std")
+    "speed": 0.2,       # playback speed 1 +/- this; changes the heart rate in the clip
+    "zoom": 0.0,        # face size 1 +/- this
+    "noise": 0.0,       # max std of per-pixel Gaussian camera noise (0-255 scale)
+}
+
+
+def zoom_clip(x, scale):
+    """Resize every frame by `scale` and center-crop / edge-pad back to the original size."""
+    t, h, w, c = x.shape
+    new = max(8, int(round(h * scale)))
+    out = np.stack([cv2.resize(f, (new, new), interpolation=cv2.INTER_AREA) for f in x])
+    if new >= h:
+        o = (new - h) // 2
+        return out[:, o : o + h, o : o + w]
+    p = h - new
+    return np.pad(out, ((0, 0), (p // 2, p - p // 2), (p // 2, p - p // 2), (0, 0)), mode="edge")
+
+
 class RPPGDataset(Dataset):
     def __init__(self, subjects, clip_len=160, stride=None, input_type="diff", augment=False,
                  min_face_ratio=0.9, root=PROCESSED):
         self.clip_len = clip_len
         self.input_type = input_type
-        self.augment = augment
+        # augment: False, True (the original settings), or a dict overriding DEFAULT_AUG.
+        self.aug = None if not augment else {**DEFAULT_AUG, **(augment if isinstance(augment, dict) else {})}
         stride = stride or clip_len
         self.data, self.index = {}, []
         for name in subjects:
@@ -90,7 +116,8 @@ class RPPGDataset(Dataset):
     def _read(self, name, start, rng):
         frames, ppg = self.data[name]["frames"], self.data[name]["ppg"]
         n_out = self.clip_len + 1
-        speed = rng.uniform(0.8, 1.2) if self.augment else 1.0
+        s = self.aug["speed"] if self.aug else 0.0
+        speed = rng.uniform(1 - s, 1 + s)
         # Speed augmentation: read more/fewer source frames and squeeze them into n_out.
         # The label is resampled identically, so the target HR changes by the same factor.
         n_src = min(int(round(self.clip_len * speed)) + 1, len(ppg) - start)
@@ -106,20 +133,29 @@ class RPPGDataset(Dataset):
         return x, y
 
     def _augment_frames(self, x, rng):
-        if rng.random() < 0.5:
+        a = self.aug
+        if a["flip"] and rng.random() < 0.5:
             x = x[:, :, ::-1]  # horizontal flip
-        # Brightness / contrast change for the whole clip (simulates different lighting).
-        x = np.clip(x * rng.uniform(0.8, 1.2) + rng.uniform(-15, 15), 0, 255)
-        # Small spatial shift (simulates an imperfect face box).
-        dy, dx = rng.integers(-4, 5, size=2)
-        x = np.roll(x, (dy, dx), axis=(1, 2))
-        return np.ascontiguousarray(x)
+        if a["zoom"]:
+            x = zoom_clip(x, rng.uniform(1 - a["zoom"], 1 + a["zoom"]))  # face nearer / further away
+        # Brightness offset. (A contrast or per-channel color gain would be cancelled exactly
+        # by diff_normalize, so for "diff" input only the additive part matters.)
+        x = np.clip(x * rng.uniform(1 - a["contrast"], 1 + a["contrast"])
+                    + rng.uniform(-a["brightness"], a["brightness"]), 0, 255)
+        if a["shift"]:
+            dy, dx = rng.integers(-a["shift"], a["shift"] + 1, size=2)  # imperfect face box
+            x = np.roll(x, (dy, dx), axis=(1, 2))
+        if a["noise"]:
+            # Per-pixel camera noise: forces the network to average over skin regions
+            # instead of keying on individual pixels it has memorized.
+            x = np.clip(x + rng.normal(0, rng.uniform(0, a["noise"]), x.shape).astype(np.float32), 0, 255)
+        return np.ascontiguousarray(x, dtype=np.float32)
 
     def __getitem__(self, i):
         name, start = self.index[i]
         rng = np.random.default_rng()
         x, y = self._read(name, start, rng)
-        if self.augment:
+        if self.aug:
             x = self._augment_frames(x, rng)
 
         if self.input_type == "std":

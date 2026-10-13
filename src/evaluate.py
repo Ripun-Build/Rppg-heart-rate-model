@@ -12,7 +12,8 @@ It also checks the confidence score: is the SNR of the predicted waveform low ex
 when the BPM is wrong? SNR is computed on validation AND test, so thresholds can be
 chosen on validation only.
 
-The model is run 1's best checkpoint, chosen on validation in Phase 3 (never on test).
+The first --checkpoint is the main model (chosen on validation in Phase 3). Others are
+reported as an ablation, never used to pick the model.
 
 Outputs (outputs/phase5/):
   metrics.csv                  all methods x {clip, video} on the test subjects
@@ -23,7 +24,8 @@ Outputs (outputs/phase5/):
   quality.csv                  accuracy per confidence label (Good / Fair / Poor), val and test
   <run>/test_waveforms.png     predicted vs true pulse for a few test clips
 
-Run:  python -m src.evaluate [--checkpoint checkpoints/<run>/best.pt]
+Run:  python -m src.evaluate                       (main model only)
+      python -m src.evaluate --ablation            (+ runs 2 and 3)
 """
 import argparse
 from pathlib import Path
@@ -46,13 +48,16 @@ from src.train import plot_examples, predict
 ROOT = Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "outputs" / "phase5"
 MAIN = ROOT / "checkpoints" / "physnet_ubfc" / "best.pt"
+ABLATION = [ROOT / "checkpoints" / "physnet_ubfc_reg" / "best.pt",
+            ROOT / "checkpoints" / "physnet_ubfc_ema" / "best.pt"]
 BASELINES = {"GREEN": green, "CHROM": chrom, "POS": pos}
 
 
 def load_model(path, device):
     ck = torch.load(path, map_location=device, weights_only=False)
     cfg = ck["config"]
-    model = PhysNet(cfg["model"]["frames"], in_channels=6 if cfg["data"]["input_type"] == "both" else 3)
+    model = PhysNet(cfg["model"]["frames"], in_channels=6 if cfg["data"]["input_type"] == "both" else 3,
+                    dropout=cfg["model"].get("dropout", 0.0))
     model.load_state_dict(ck["model"])
     return model.to(device).eval(), cfg, ck["epoch"]
 
@@ -235,7 +240,7 @@ def evaluate_checkpoint(path, split, device, main):
         plot_examples(test_out, test_clips["PhysNet_hr"].to_numpy(), test_clips["true_hr"].to_numpy(),
                       out_dir / "test_waveforms.png", n=6)
 
-    label = f"PhysNet ({name}, epoch {epoch})"
+    label = f"PhysNet ({name}, epoch {epoch})" + ("" if main else " [ablation]")
     rows = [{"method": label, "level": lvl, **metrics(df["PhysNet_hr"], df["true_hr"])}
             for lvl, df in [("clip", test_clips), ("video_fft", test_videos), ("video_median", test_median)]]
     return rows, test_clips, test_videos, test_median
@@ -244,6 +249,7 @@ def evaluate_checkpoint(path, split, device, main):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint", default=str(MAIN), help="main model (chosen on validation)")
+    parser.add_argument("--ablation", action="store_true", help="also score runs 2 and 3 on test")
     args = parser.parse_args()
     device = "mps" if torch.backends.mps.is_available() else "cpu"
     split = load_split()
@@ -254,6 +260,10 @@ def main():
     for name in BASELINES:  # baselines don't depend on the model; take them from the main run's tables
         for lvl, df in [("clip", test_clips), ("video_fft", test_videos), ("video_median", test_median)]:
             rows.append({"method": name, "level": lvl, **metrics(df[f"{name}_hr"], df["true_hr"])})
+    if args.ablation:
+        for path in ABLATION:
+            if path.exists():
+                rows += evaluate_checkpoint(path, split, device, main=False)[0]
 
     table = pd.DataFrame(rows)
     table.to_csv(OUT_DIR / "metrics.csv", index=False)

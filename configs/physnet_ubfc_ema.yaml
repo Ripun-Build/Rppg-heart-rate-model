@@ -1,0 +1,30 @@
+# Run 3: balanced regularization. Run 1 settings + only gentle fixes.
+# Run 1 overfit (gap 0.04 -> 0.25); run 2 (dropout 0.3, wd 0.05, LR 5e-4) overshot and underfit
+# (train loss stuck at 0.68). So here: no dropout, LR back to 0.001, mild weight decay, EMA weights.
+name: physnet_ubfc_ema
+
+data:
+  clip_len: 160
+  input_type: diff
+  train_stride: 80
+  augment:
+    flip: true
+    shift: 4
+    brightness: 15
+    speed: 0.2
+    zoom: 0.15          # kept from run 2
+    noise: 5.0          # kept from run 2
+
+model:
+  frames: 160
+  dropout: 0.0          # run 2 used 0.3 (likely main cause of underfitting)
+
+train:
+  epochs: 25
+  batch_size: 4
+  lr: 0.001             # same as run 1
+  weight_decay: 0.01    # run 1: 0, run 2: 0.05
+  ema_decay: 0.997      # averages over roughly the last ~330 steps (~2 epochs)
+  patience: 5
+  seed: 42
+  device: mps

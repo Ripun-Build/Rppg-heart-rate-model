@@ -1,0 +1,44 @@
+Training physnet_ubfc_ema on mps: 685 train clips, 69 val clips, 171 steps/epoch, 25 epochs
+  epoch 1 step 50/171 loss 0.9139
+  epoch 1 step 100/171 loss 0.7586
+  epoch 1 step 150/171 loss 0.7350
+Epoch  1/25  train 0.8000  val 0.9902  val MAE  9.59 BPM  RMSE 15.89  r 0.670  within 5 BPM  62%  (4.3 min)  * best
+  epoch 2 step 50/171 loss 0.6774
+  epoch 2 step 100/171 loss 0.7214
+  epoch 2 step 150/171 loss 0.7402
+Epoch  2/25  train 0.7169  val 0.8354  val MAE  5.30 BPM  RMSE  9.75  r 0.836  within 5 BPM  77%  (4.8 min)  * best
+  epoch 3 step 50/171 loss 0.7390
+  epoch 3 step 100/171 loss 0.6869
+  epoch 3 step 150/171 loss 0.6815
+Epoch  3/25  train 0.7024  val 0.7899  val MAE  2.91 BPM  RMSE  6.46  r 0.930  within 5 BPM  87%  (4.9 min)  * best
+  epoch 4 step 50/171 loss 0.6661
+  epoch 4 step 100/171 loss 0.6862
+  epoch 4 step 150/171 loss 0.6739
+Epoch  4/25  train 0.6851  val 0.7742  val MAE  2.63 BPM  RMSE  6.02  r 0.940  within 5 BPM  90%  (4.9 min)  * best
+  epoch 5 step 50/171 loss 0.6980
+  epoch 5 step 100/171 loss 0.6747
+  epoch 5 step 150/171 loss 0.7152
+Epoch  5/25  train 0.6929  val 0.7688  val MAE  2.56 BPM  RMSE  6.01  r 0.941  within 5 BPM  90%  (5.0 min)  * best
+  epoch 6 step 50/171 loss 0.6789
+  epoch 6 step 100/171 loss 0.6997
+  epoch 6 step 150/171 loss 0.6733
+Epoch  6/25  train 0.6791  val 0.7659  val MAE  2.56 BPM  RMSE  5.97  r 0.941  within 5 BPM  88%  (4.9 min)
+  epoch 7 step 50/171 loss 0.6727
+  epoch 7 step 100/171 loss 0.6949
+  epoch 7 step 150/171 loss 0.6768
+Epoch  7/25  train 0.6848  val 0.7667  val MAE  2.57 BPM  RMSE  5.92  r 0.942  within 5 BPM  88%  (5.2 min)
+  epoch 8 step 50/171 loss 0.6458
+  epoch 8 step 100/171 loss 0.6848
+  epoch 8 step 150/171 loss 0.6657
+Epoch  8/25  train 0.6661  val 0.7727  val MAE  2.59 BPM  RMSE  5.85  r 0.944  within 5 BPM  88%  (5.4 min)
+  epoch 9 step 50/171 loss 0.7007
+  epoch 9 step 100/171 loss 0.6700
+  epoch 9 step 150/171 loss 0.6344
+Epoch  9/25  train 0.6611  val 0.7791  val MAE  3.13 BPM  RMSE  9.24  r 0.864  within 5 BPM  88%  (5.1 min)
+  epoch 10 step 50/171 loss 0.6765
+  epoch 10 step 100/171 loss 0.6563
+  epoch 10 step 150/171 loss 0.6326
+Epoch 10/25  train 0.6516  val 0.7841  val MAE  3.13 BPM  RMSE  9.22  r 0.865  within 5 BPM  88%  (5.1 min)
+Early stopping: no improvement for 5 epochs (best was epoch 5)
+
+Done. Best validation MAE 2.56 BPM -> /Users/ripun/Documents/RPPG/checkpoints/physnet_ubfc_ema/best.pt

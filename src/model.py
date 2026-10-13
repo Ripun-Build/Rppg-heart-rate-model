@@ -19,9 +19,12 @@ def conv_block(c_in, c_out, kernel, padding):
 
 
 class PhysNet(nn.Module):
-    def __init__(self, frames=160, in_channels=3):
+    def __init__(self, frames=160, in_channels=3, dropout=0.0):
         super().__init__()
         self.frames = frames
+        # Drops whole feature maps during training so the decoder can't depend on any
+        # single memorized feature; does nothing at inference.
+        self.dropout = nn.Dropout3d(dropout)
 
         # Encoder: spatial pooling shrinks the face, temporal pooling halves time twice.
         self.conv1 = conv_block(in_channels, 16, (1, 5, 5), (0, 2, 2))
@@ -61,7 +64,7 @@ class PhysNet(nn.Module):
         x = self.pool2(self.conv3(self.conv2(x)))
         x = self.pool3(self.conv5(self.conv4(x)))
         x = self.pool4(self.conv7(self.conv6(x)))
-        x = self.conv9(self.conv8(x))
+        x = self.dropout(self.conv9(self.conv8(x)))
         x = self.up2(self.up1(x))
         # Collapse space to a single value per frame (AdaptiveAvgPool3d isn't supported on MPS).
         x = self.head(x.mean(dim=(3, 4), keepdim=True))
