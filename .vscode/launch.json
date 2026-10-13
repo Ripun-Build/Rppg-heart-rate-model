@@ -65,6 +65,14 @@
             "console": "integratedTerminal"
         },
         {
+            "name": "Phase 5: evaluate main model",
+            "module": "src.evaluate",
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "Model smoke test",
             "type": "debugpy",
             "request": "launch",

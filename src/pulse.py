@@ -10,6 +10,19 @@ def bandpass(wave, fs, low=MIN_HZ, high=MAX_HZ, order=2):
     return sps.filtfilt(b, a, np.asarray(wave, dtype=np.float64))
 
 
+def to_pulse(wave, is_diff):
+    """Turn a model output / label into a pulse wave before measuring HR.
+
+    With DiffNormalized input the network predicts the frame-to-frame DIFFERENCE of the
+    pulse. Differencing amplifies higher frequencies, so the 2nd harmonic (2x HR) can
+    out-power the fundamental, especially at low heart rates (seen on subject37:
+    55 BPM read as 110). Integrating (cumulative sum) and removing the drift restores the
+    pulse shape, as rPPG-Toolbox does for diff-trained models.
+    """
+    wave = np.asarray(wave, dtype=np.float64)
+    return sps.detrend(np.cumsum(wave)) if is_diff else wave
+
+
 def _spectrum(wave, fs, n_fft=None):
     wave = np.asarray(wave, dtype=np.float64)
     wave = wave - wave.mean()
@@ -59,10 +72,40 @@ def pos(rgb, fs, window_s=1.6):
     return out
 
 
+def chrom(rgb, fs, window_s=1.6):
+    """CHROM (de Haan & Jeanne 2013): two fixed color-difference signals, combined so that
+    motion/specular changes (equal in both) cancel. Hann-windowed overlap-add."""
+    rgb = np.asarray(rgb, dtype=np.float64)
+    n = len(rgb)
+    l = int(window_s * fs) // 2 * 2  # even window length for 50% overlap
+    out = np.zeros(n)
+    win = np.hanning(l)
+    for start in range(0, n - l + 1, l // 2):
+        c = rgb[start : start + l]
+        c = c / (c.mean(axis=0) + 1e-9)
+        x = 3 * c[:, 0] - 2 * c[:, 1]
+        y = 1.5 * c[:, 0] + c[:, 1] - 1.5 * c[:, 2]
+        xf, yf = bandpass(x, fs), bandpass(y, fs)
+        s = xf - (xf.std() / (yf.std() + 1e-9)) * yf
+        out[start : start + l] += win * (s - s.mean())
+    return out
+
+
+def green(rgb, fs):
+    """GREEN (Verkruysse et al. 2008): just the mean green channel, the simplest baseline."""
+    g = np.asarray(rgb, dtype=np.float64)[:, 1]
+    return g - g.mean()
+
+
+# SNR thresholds (dB) of the PhysNet output, chosen on the UBFC validation subjects in Phase 5:
+# clips with SNR >= 0 were within 5 BPM 98% of the time; most badly wrong clips had SNR < -2.
+SNR_GOOD, SNR_FAIR = 0.0, -2.0
+
+
 def quality_label(snr, face_found_ratio=1.0, mean_luma=128.0):
-    """Combine cues into Good / Fair / Poor. Thresholds get tuned in Phase 5."""
-    if face_found_ratio < 0.9 or not (40 <= mean_luma <= 220) or snr < -3:
+    """Combine cues into Good / Fair / Poor."""
+    if face_found_ratio < 0.9 or not (40 <= mean_luma <= 220) or snr < SNR_FAIR:
         return "Poor"
-    if snr < 3:
+    if snr < SNR_GOOD:
         return "Fair"
     return "Good"

@@ -35,7 +35,7 @@ from torch.utils.tensorboard import SummaryWriter
 from src.dataset import RPPGDataset, load_split
 from src.losses import NegPearsonLoss
 from src.model import PhysNet
-from src.pulse import estimate_bpm
+from src.pulse import estimate_bpm, to_pulse
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -61,10 +61,11 @@ def predict(model, loader, device):
             "fs": np.array(fs), "subject": subjects, "start": starts}
 
 
-def hr_metrics(out):
-    """Clip-level heart rate: FFT of predicted waveform vs FFT of true waveform."""
-    pred_hr = np.array([estimate_bpm(p, f) for p, f in zip(out["pred"], out["fs"])])
-    true_hr = np.array([estimate_bpm(y, f) for y, f in zip(out["label"], out["fs"])])
+def hr_metrics(out, is_diff=False):
+    """Clip-level heart rate: FFT of predicted waveform vs FFT of true waveform.
+    is_diff: waveforms are first differences (DiffNormalized) and must be integrated first."""
+    pred_hr = np.array([estimate_bpm(to_pulse(p, is_diff), f) for p, f in zip(out["pred"], out["fs"])])
+    true_hr = np.array([estimate_bpm(to_pulse(y, is_diff), f) for y, f in zip(out["label"], out["fs"])])
     err = pred_hr - true_hr
     return {
         "mae": float(np.mean(np.abs(err))),
@@ -91,14 +92,14 @@ def plot_curves(hist, path):
     plt.close(fig)
 
 
-def plot_examples(out, pred_hr, true_hr, path, n=4):
+def plot_examples(out, pred_hr, true_hr, path, n=4, is_diff=False):
     idx = np.linspace(0, len(pred_hr) - 1, n).astype(int)
     fig, axes = plt.subplots(n, 1, figsize=(11, 2.4 * n))
     for ax, i in zip(axes, idx):
         t = np.arange(out["pred"].shape[1]) / out["fs"][i]
         z = lambda v: (v - v.mean()) / (v.std() + 1e-8)
-        ax.plot(t, z(out["label"][i]), color="k", label=f"true ({true_hr[i]:.1f} BPM)")
-        ax.plot(t, z(out["pred"][i]), color="C3", alpha=0.8, label=f"predicted ({pred_hr[i]:.1f} BPM)")
+        ax.plot(t, z(to_pulse(out["label"][i], is_diff)), color="k", label=f"true ({true_hr[i]:.1f} BPM)")
+        ax.plot(t, z(to_pulse(out["pred"][i], is_diff)), color="C3", alpha=0.8, label=f"predicted ({pred_hr[i]:.1f} BPM)")
         ax.set_title(f"{out['subject'][i]}, frames {out['start'][i]}-{out['start'][i] + len(t)}", fontsize=9)
         ax.legend(loc="upper right", fontsize=8)
     axes[-1].set_xlabel("time (s)")
@@ -131,7 +132,8 @@ def overfit_test(cfg, n_clips, device, steps=150):
     with torch.no_grad():
         pred = model(x).cpu().numpy()
     for p, t, f in zip(pred, batch["y"].numpy(), batch["fs"]):
-        print(f"  true {estimate_bpm(t, float(f)):6.1f} BPM   predicted {estimate_bpm(p, float(f)):6.1f} BPM")
+        d = cfg["data"]["input_type"] != "std"
+        print(f"  true {estimate_bpm(to_pulse(t, d), float(f)):6.1f} BPM   predicted {estimate_bpm(to_pulse(p, d), float(f)):6.1f} BPM")
     print("PASS" if loss.item() < 0.1 else "FAIL: loss did not approach 0, check the pipeline")
 
 
@@ -143,6 +145,7 @@ def train(cfg, device, resume=False):
     (ckpt_dir / "config.yaml").write_text(yaml.safe_dump(cfg))
 
     d, t = cfg["data"], cfg["train"]
+    is_diff = d["input_type"] != "std"  # model predicts first differences of the pulse
     split = load_split()
     train_ds = RPPGDataset(split["train"], clip_len=d["clip_len"], stride=d["train_stride"],
                            input_type=d["input_type"], augment=d["augment"])
@@ -185,7 +188,7 @@ def train(cfg, device, resume=False):
 
         out = predict(model, val_dl, device)
         val_loss = float(loss_fn(torch.from_numpy(out["pred"]), torch.from_numpy(out["label"])))
-        m, pred_hr, true_hr = hr_metrics(out)
+        m, pred_hr, true_hr = hr_metrics(out, is_diff)
         row = {"epoch": epoch, "train_loss": float(np.mean(losses)), "val_loss": val_loss,
                "val_mae": m["mae"], "val_rmse": m["rmse"], "val_pearson": m["pearson"],
                "val_within5_pct": m["within5_pct"], "lr": opt.param_groups[0]["lr"],
@@ -199,7 +202,7 @@ def train(cfg, device, resume=False):
             best_mae = m["mae"]
             torch.save({"model": model.state_dict(), "config": cfg, "epoch": epoch, "val_mae": best_mae},
                        ckpt_dir / "best.pt")
-            plot_examples(out, pred_hr, true_hr, out_dir / "val_examples.png")
+            plot_examples(out, pred_hr, true_hr, out_dir / "val_examples.png", is_diff=is_diff)
         torch.save({"model": model.state_dict(), "optimizer": opt.state_dict(), "scheduler": sched.state_dict(),
                     "epoch": epoch, "best_mae": best_mae, "history": history, "config": cfg},
                    ckpt_dir / "last.pt")
