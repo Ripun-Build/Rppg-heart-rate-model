@@ -73,6 +73,59 @@
             "console": "integratedTerminal"
         },
         {
+            "name": "Phase 6: measure heart rate (webcam, 30 s)",
+            "module": "src.live",
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Phase 6: measure on a UBFC test video",
+            "module": "src.live",
+            "args": [
+                "--video",
+                "data/raw/UBFC-rPPG/subject${input:testSubject}/vid.avi"
+            ],
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Phase 6: diagnose my webcam measurements",
+            "module": "src.live",
+            "args": [
+                "--diagnose"
+            ],
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Phase 6: live BPM every second (webcam)",
+            "module": "src.live",
+            "args": [
+                "--continuous"
+            ],
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Phase 6: accuracy check (simulated 30 s measurements on UBFC)",
+            "module": "src.live",
+            "args": [
+                "--test-sessions"
+            ],
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "Model smoke test",
             "type": "debugpy",
             "request": "launch",
@@ -87,6 +140,20 @@
             "type": "promptString",
             "description": "Subject number for the detailed plot (e.g. 1, 14, 24)",
             "default": "1"
+        },
+        {
+            "id": "testSubject",
+            "type": "pickString",
+            "description": "UBFC test subject (never used in training)",
+            "options": [
+                "8",
+                "24",
+                "27",
+                "34",
+                "37",
+                "47"
+            ],
+            "default": "34"
         }
     ]
 }

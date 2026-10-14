@@ -16,3 +16,6 @@ models/*.tflite
 
 # Images that show dataset subjects' faces - UBFC license, never publish
 outputs/**/private/
+
+# Personal webcam heart-rate measurements (health data) - kept local
+outputs/phase6/sessions_webcam.csv

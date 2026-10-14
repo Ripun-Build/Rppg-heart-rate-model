@@ -28,7 +28,8 @@ curl -L -o models/blaze_face_short_range.tflite \
 | `src/train.py` | Training loop, overfit sanity test, best-checkpoint saving, TensorBoard |
 | `configs/physnet_ubfc.yaml` | Training settings |
 | `src/evaluate.py` | Phase 5 test-set evaluation vs GREEN/CHROM/POS, Bland-Altman, confidence check |
-| `src/live.py`, `src/export.py` | *(todo)* webcam demo, ONNX export |
+| `src/live.py` | Phase 6 webcam app: 30 s measurement -> one BPM + range + confidence, diagnostics |
+| `src/export.py` | *(todo)* ONNX export |
 | `data/raw/` | Downloaded datasets (git-ignored) |
 
 ## Datasets (request access – Phase 1)
@@ -64,5 +65,13 @@ Reference implementation: https://github.com/ubicomplab/rPPG-Toolbox
   Bug fixed: HR was read from the network's *differenced* output, whose 2nd harmonic can win
   at low HR (55 BPM read as 110); outputs are now integrated first (`to_pulse`).
   (`python -m src.evaluate`, results in `outputs/phase5/`)
-- [ ] Phase 6 – live webcam demo
+- [x] Phase 6 – webcam app (`python -m src.live`): measurement mode records 30 s, then shows one
+  heart rate = median of the ~1 s window estimates, with a range and a confidence level.
+  Same crop / normalization / BPM code as training; frames resampled to 30 fps from timestamps.
+  Simulated 30 s measurements on the UBFC test videos: **MAE 0.86 BPM**, worst 2.3 BPM (12 sessions);
+  final-BPM method chosen on validation (median of windows 0.94 vs one long FFT 1.47 BPM).
+  Webcam: face found ~100%, but pulse SNR ~-2 dB vs +1.9 dB on UBFC -> mostly Low confidence.
+  Diagnostics (face size, brightness variation, POS on the same frames) added to find out whether
+  the camera/lighting or the model is the cause; real-world accuracy vs a reference still to be measured.
+  (`--continuous` for live BPM every second, `--diagnose`, `--test-sessions`; results in `outputs/phase6/`)
 - [ ] Phase 7 – ONNX export
