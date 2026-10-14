@@ -3,14 +3,26 @@
 PhysNet (3D-CNN) trained on UBFC-rPPG, tested on PURE, then run live on a webcam.
 Outputs BPM plus a signal-quality label (Good / Fair / Poor). Not a medical device.
 
-## Setup
+## Quick start: measure your heart rate with the webcam (no dataset or training needed)
+The trained model (`checkpoints/physnet_ubfc/best.pt`, 3 MB) is included. Needs Python 3.11 and a webcam.
+```bash
+git clone https://github.com/Ripun-Build/Rppg-heart-rate-model.git
+cd Rppg-heart-rate-model
+python3.11 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+.venv/bin/python -m src.live
+```
+On first run the MediaPipe face detector (230 KB) downloads automatically from Google. On macOS, allow
+camera access for the terminal / VS Code when asked. Sit still in front of the camera for 30 s, facing
+even light; the app then shows one heart rate with a range and a confidence level
+(`r` = measure again, `q` = quit). Not a medical device.
+
+## Setup for the full pipeline (training / evaluation)
 ```bash
 /opt/homebrew/bin/python3.11 -m venv .venv
 .venv/bin/pip install -r requirements.txt
-# MediaPipe face detector (230 KB, Google's official model)
-curl -L -o models/blaze_face_short_range.tflite \
-  https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite
 ```
+Then request and extract the datasets below; the face detector downloads itself on first use.
 
 ## Layout
 | Path | What |

@@ -14,6 +14,21 @@ import numpy as np
 from mediapipe.tasks.python import BaseOptions, vision
 
 MODEL_PATH = Path(__file__).resolve().parent.parent / "models" / "blaze_face_short_range.tflite"
+MODEL_URL = ("https://storage.googleapis.com/mediapipe-models/face_detector/"
+             "blaze_face_short_range/float16/latest/blaze_face_short_range.tflite")
+
+
+def ensure_face_model():
+    """Download Google's MediaPipe face detector (230 KB) on first use, so a fresh clone runs."""
+    if MODEL_PATH.exists():
+        return
+    import urllib.request
+
+    print(f"Downloading the MediaPipe face detector (230 KB) to {MODEL_PATH} ...")
+    MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+    tmp = MODEL_PATH.with_suffix(".part")
+    urllib.request.urlretrieve(MODEL_URL, tmp)
+    tmp.rename(MODEL_PATH)
 CROP_SIZE = 72
 
 
@@ -28,6 +43,7 @@ class FaceTracker:
     """
 
     def __init__(self, detect_every=5, scale=1.5, alpha=0.3, min_confidence=0.5):
+        ensure_face_model()
         self.detector = vision.FaceDetector.create_from_options(vision.FaceDetectorOptions(
             base_options=BaseOptions(model_asset_path=str(MODEL_PATH)),
             running_mode=vision.RunningMode.IMAGE,

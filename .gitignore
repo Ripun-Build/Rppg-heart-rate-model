@@ -7,7 +7,11 @@ __pycache__/
 data/raw/*
 data/processed/*
 !data/**/.gitkeep
-checkpoints/
+# Trained weights are ignored, except the main model so the webcam app runs right after cloning
+checkpoints/*
+!checkpoints/physnet_ubfc/
+checkpoints/physnet_ubfc/*
+!checkpoints/physnet_ubfc/best.pt
 runs/
 *.onnx
 
